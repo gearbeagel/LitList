@@ -79,20 +79,16 @@ def process_list_name(message, user, user_lists):
 def create_entry(message):
     chat_id = message.chat.id
     user = session.query(User).filter_by(chat_id=chat_id).first()
-
     if not user:
         bot.send_message(chat_id, "Ти не зареєстрований. Клацни /start аби зарєструватися.")
         return
     user_lists = session.query(List).filter_by(list_owner=user.user_id).all()
-
     if not user_lists:
         bot.send_message(chat_id, "У вас немає створених списків. Створіть список за допомогою /create_list.")
         return
-
     list_markup = types.ReplyKeyboardMarkup(row_width=1)
     for user_list in user_lists:
         list_markup.add(types.KeyboardButton(user_list.list_name))
-
     msg = bot.send_message(chat_id, "Вибери список:", reply_markup=list_markup)
     bot.register_next_step_handler(msg, process_list_choice)
     list_markup = types.ReplyKeyboardRemove(selective=False)
@@ -117,28 +113,43 @@ def process_list_choice(message):
 def process_entry_details(message, selected_list):
     if message.content_type != 'text':
         bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
-        bot.register_next_step_handler(message, lambda m: process_entry_details(m, selected_list))
+        bot.register_next_step_handler(message, lambda m: process_list_choice(m))
         return
 
     title = message.text.strip()
-    msg = bot.send_message(message.chat.id, "Хто автор?")
-    bot.register_next_step_handler(msg, lambda m: process_author(m, title, selected_list))
+    msg = bot.send_message(message.chat.id, "Як звати автора?")
+    bot.register_next_step_handler(msg, lambda m: process_author_name(m, title, selected_list))
 
 
-def process_author(message, title, selected_list):
-    chat_id = message.chat.id
-    try:
-        author_name, author_surname = message.text.strip().split(maxsplit=1)
-    except ValueError:
-        bot.send_message(chat_id, "Введіть як ім'я, так і прізвище автора. Спробуйте ще раз.")
-        bot.register_next_step_handler(message, lambda m: process_author(m, title, selected_list))
+def process_author_name(message, title, selected_list):
+    if message.content_type != 'text':
+        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
+        bot.register_next_step_handler(message, lambda m: process_entry_details(m, selected_list))
         return
+    chat_id = message.chat.id
+    author_name = message.text
+
+    msg = bot.send_message(chat_id, "Яке у нього прізвище?")
+    bot.register_next_step_handler(msg, lambda m: process_author_surname(m, title, author_name, selected_list))
+
+
+def process_author_surname(message, title, author_name, selected_list):
+    if message.content_type != 'text':
+        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
+        bot.register_next_step_handler(message, lambda m: process_author_name(m, title, selected_list))
+        return
+    chat_id = message.chat.id
+    author_surname = message.text
 
     msg = bot.send_message(chat_id, "Який рік?")
     bot.register_next_step_handler(msg, lambda m: process_year(m, title, author_name, author_surname, selected_list))
 
 
 def process_year(message, title, author_name, author_surname, selected_list):
+    if message.content_type != 'text':
+        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
+        bot.register_next_step_handler(message, lambda m: process_author_surname(m, title, author_name, selected_list))
+        return
     chat_id = message.chat.id
     year_input = message.text
     try:
@@ -155,6 +166,10 @@ def process_year(message, title, author_name, author_surname, selected_list):
 
 
 def process_publisher(message, title, author_name, author_surname, year, selected_list):
+    if message.content_type != 'text':
+        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
+        bot.register_next_step_handler(message, lambda m: process_year(m, title, author_name, author_surname, selected_list))
+        return
     chat_id = message.chat.id
 
     publisher = message.text
@@ -174,27 +189,28 @@ def save_entry(title, author_name, author_surname, year, publisher, selected_lis
     )
     session.add(new_entry)
     session.commit()
-    print(selected_list.list_id)
 
 
 @bot.message_handler(commands=['show_lists'])
 def show_lists(message):
+    if message.content_type != 'text':
+        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
+        bot.register_next_step_handler(message, lambda m: start)
+        return
     chat_id = message.chat.id
     user = session.query(User).filter_by(chat_id=chat_id).first()
-
     if user:
         lists = user.lists
         if lists:
             for i, user_list in enumerate(lists, start=1):
                 list_content = f"Список літератури:\n"
                 list_content += f"Назва: {user_list.list_name}\n"
-
                 entries = user_list.entries
                 if entries:
                     for j, entry in enumerate(entries, start=1):
                         list_content += (
                             f"\n{j}. {entry.authors_surname}, {entry.authors_name}: {entry.title}: {entry.publisher}, "
-                            f"{entry.year_of_publishing}\n")
+                            f"{entry.year_of_publishing.year}")
                 else:
                     list_content += "Список порожній."
                 bot.send_message(chat_id, list_content)
@@ -208,11 +224,9 @@ def show_lists(message):
 def start_delete_list(message):
     chat_id = message.chat.id
     user = session.query(User).filter_by(chat_id=chat_id).first()
-
     if not user:
         bot.send_message(chat_id, "Користувача не знайдено. Почніть спочатку.")
         return
-
     bot.send_message(chat_id, "Введіть назву списку, який ви хочете видалити.")
     bot.register_next_step_handler(message, delete_list, user)
 
@@ -220,22 +234,52 @@ def start_delete_list(message):
 def delete_list(message, user):
     chat_id = message.chat.id
     list_name = message.text.strip()
-
     user_lists = user.lists
-
     selected_list = next((lst for lst in user_lists if lst.list_name == list_name), None)
-
     if not selected_list:
         bot.send_message(chat_id, "Список з такою назвою не існує. Спробуйте ще раз.")
         bot.register_next_step_handler(message, lambda m: delete_list(m, user))
         return
-
-    entries_in_list = selected_list.entries
-    session.delete(entries_in_list)
     session.delete(selected_list)
     session.commit()
-
     bot.send_message(chat_id, f"Список '{list_name}' був успішно видалений.")
 
+
+@bot.message_handler(commands=['delete_entry'])
+def start_delete_entry(message):
+    chat_id = message.chat.id
+    user = session.query(User).filter_by(chat_id=chat_id).first()
+    if not user:
+        bot.send_message(chat_id, "Користувача не знайдено. Почніть спочатку.")
+        return
+    bot.send_message(chat_id, "Введіть назву списку, звідки ви хочете видалити джерело.")
+    bot.register_next_step_handler(message, process_selected_list_deletion, user)
+
+
+def process_selected_list_deletion(message, user):
+    chat_id = message.chat.id
+    user_lists = user.lists
+    list_name_to_utilize = message.text.strip()
+    selected_list = next((lst for lst in user_lists if lst.list_name == list_name_to_utilize), None)
+    if not selected_list:
+        bot.send_message(chat_id, "Список з такою назвою не існує. Спробуйте ще раз.")
+        bot.register_next_step_handler(message, lambda m: start_delete_entry(m, user))
+        return
+    bot.send_message(chat_id, "Введіть назву джерела, яке хочете видалити.")
+    bot.register_next_step_handler(message, delete_entry, selected_list, user)
+
+
+def delete_entry(message, selected_list, user):
+    chat_id = message.chat.id
+    entry_name_to_delete = message.text.strip()
+    if entry_name_to_delete not in [entry.title for entry in selected_list.entries]:
+        bot.send_message(chat_id, f"Джерело '{entry_name_to_delete}' не знайдено в списку '{selected_list.list_name}'. Спробуйте ще раз.")
+        bot.register_next_step_handler(message, lambda m: delete_entry(m, selected_list, user))
+        return
+    entry_to_delete = next(entry for entry in selected_list.entries if entry.title == entry_name_to_delete)
+    selected_list.entries.remove(entry_to_delete)
+    session.commit()
+
+    bot.send_message(chat_id, f"Джерело '{entry_name_to_delete}' успішно видалено зі списку '{selected_list.list_name}'.")
 
 bot.polling(none_stop=True)
