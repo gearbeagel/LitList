@@ -1,7 +1,9 @@
 from datetime import datetime
 import telebot
+from sqlalchemy.orm import scoped_session, sessionmaker
 from telebot import types
 from db_models import *
+from book_creation import *
 
 BOT_TOKEN = "6894160738:AAG58kcR8eg9l8VCHGe6Gk5TipnQcLKt42E"
 DATABASE_URL = 'mysql+mysqlconnector://root:Funnyhaha111@localhost:3306/lit_list'
@@ -34,13 +36,15 @@ def start(message):
                                   "/create_list - створити список літератури.\n"
                                   "/create_entry - створити елемент у списку літератури.\n"
                                   "/show_lists - передивитися свої списки літератури.\n"
-                                  "/delete_list - видалити список.")
+                                  "/delete_list - видалити список.\n"
+                                  "/delete_entry - видалити джерело у списку літератури.")
     else:
         bot.send_message(chat_id, "Знову привіт! Вибирай, що хочеш зробити:\n"
                                   "/create_list - створити список літератури.\n"
                                   "/create_entry - створити елемент у списку літератури.\n"
                                   "/show_lists - передивитися свої списки літератури.\n"
-                                  "/delete_list - видалити список.")
+                                  "/delete_list - видалити список.\n"
+                                  "/delete_entry - видалити джерело у списку літератури.")
 
 
 @bot.message_handler(commands=['create_list'])
@@ -106,89 +110,45 @@ def process_list_choice(message):
         bot.register_next_step_handler(message, create_entry)
         return
 
-    msg = bot.send_message(chat_id, "Файно! Яка назва?")
-    bot.register_next_step_handler(msg, lambda m: process_entry_details(m, selected_list))
+    msg = bot.send_message(chat_id, "Файно! Який це має бути вид джерела?")
+    keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    book = types.KeyboardButton("Книга")
+    ebook = types.KeyboardButton("Електронна книга")
+    doc = types.KeyboardButton("Документ")
+    archive = types.KeyboardButton("Архів")
+    article = types.KeyboardButton("Стаття")
+    interview = types.KeyboardButton("Інтерв'ю")
+    keyboard.add(book, ebook, doc, archive, article, interview)
+    bot.register_next_step_handler(msg, lambda m: process_entry_type(m, selected_list))
 
 
-def process_entry_details(message, selected_list):
-    if message.content_type != 'text':
-        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
-        bot.register_next_step_handler(message, lambda m: process_list_choice(m))
-        return
-
-    title = message.text.strip()
-    msg = bot.send_message(message.chat.id, "Як звати автора?")
-    bot.register_next_step_handler(msg, lambda m: process_author_name(m, title, selected_list))
-
-
-def process_author_name(message, title, selected_list):
-    if message.content_type != 'text':
-        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
-        bot.register_next_step_handler(message, lambda m: process_entry_details(m, selected_list))
-        return
+def process_entry_type(message, selected_list):
     chat_id = message.chat.id
-    author_name = message.text
+    entry_type = message.text
 
-    msg = bot.send_message(chat_id, "Яке у нього прізвище?")
-    bot.register_next_step_handler(msg, lambda m: process_author_surname(m, title, author_name, selected_list))
-
-
-def process_author_surname(message, title, author_name, selected_list):
-    if message.content_type != 'text':
-        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
-        bot.register_next_step_handler(message, lambda m: process_author_name(m, title, selected_list))
-        return
-    chat_id = message.chat.id
-    author_surname = message.text
-
-    msg = bot.send_message(chat_id, "Який рік?")
-    bot.register_next_step_handler(msg, lambda m: process_year(m, title, author_name, author_surname, selected_list))
-
-
-def process_year(message, title, author_name, author_surname, selected_list):
-    if message.content_type != 'text':
-        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
-        bot.register_next_step_handler(message, lambda m: process_author_surname(m, title, author_name, selected_list))
-        return
-    chat_id = message.chat.id
-    year_input = message.text
-    try:
-        year = datetime.strptime(year_input, '%Y').date()
-    except ValueError:
-        bot.send_message(chat_id, "Неправильний формат року. Введіть рік у форматі YYYY (наприклад, 2012).")
-        bot.register_next_step_handler(message,
-                                       lambda m: process_year(m, title, author_name, author_surname, selected_list))
-        return
-
-    msg = bot.send_message(chat_id, "Яке видавництво?")
-    bot.register_next_step_handler(msg, lambda m: process_publisher(m, title, author_name, author_surname, year,
-                                                                    selected_list))
+    if entry_type == "Книга":
+        bot.send_message(chat_id, "Ви обрали книгу. Введіть дані про книгу.")
+        bot.register_next_step_handler(message, lambda m: process_book_data(m, selected_list))
+    elif entry_type == "Електронна книга":
+        bot.send_message(chat_id, "Ви обрали електронну книгу. Введіть дані про електронну книгу.")
+        bot.register_next_step_handler(message, lambda m: process_ebook_data(m, selected_list))
+    elif entry_type == "Документ":
+        bot.send_message(chat_id, "Ви обрали документ. Введіть дані про документ.")
+        bot.register_next_step_handler(message, lambda m: process_doc_data(m, selected_list))
+    elif entry_type == "Архів":
+        bot.send_message(chat_id, "Ви обрали архів. Введіть дані про архів.")
+        bot.register_next_step_handler(message, lambda m: process_archive_data(m, selected_list))
+    elif entry_type == "Стаття":
+        bot.send_message(chat_id, "Ви обрали статтю. Введіть дані про статтю.")
+        bot.register_next_step_handler(message, lambda m: process_article_data(m, selected_list))
+    elif entry_type == "Інтерв'ю":
+        bot.send_message(chat_id, "Ви обрали інтерв'ю. Введіть дані про інтерв'ю.")
+        bot.register_next_step_handler(message, lambda m: process_interview_data(m, selected_list))
+    else:
+        bot.send_message(chat_id, "Невідомий тип. Спробуйте ще раз.")
+        bot.register_next_step_handler(message, lambda m: process_entry_type(m, selected_list))
 
 
-def process_publisher(message, title, author_name, author_surname, year, selected_list):
-    if message.content_type != 'text':
-        bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
-        bot.register_next_step_handler(message, lambda m: process_year(m, title, author_name, author_surname, selected_list))
-        return
-    chat_id = message.chat.id
-
-    publisher = message.text
-
-    save_entry(title, author_name, author_surname, year, publisher, selected_list)
-    bot.send_message(chat_id, f"Елемент збережений у список '{selected_list.list_name}'!")
-
-
-def save_entry(title, author_name, author_surname, year, publisher, selected_list):
-    new_entry = Entry(
-        title=title,
-        authors_name=author_name,
-        authors_surname=author_surname,
-        year_of_publishing=year,
-        publisher=publisher,
-        list_id=selected_list.list_id
-    )
-    session.add(new_entry)
-    session.commit()
 
 
 @bot.message_handler(commands=['show_lists'])
@@ -273,13 +233,16 @@ def delete_entry(message, selected_list, user):
     chat_id = message.chat.id
     entry_name_to_delete = message.text.strip()
     if entry_name_to_delete not in [entry.title for entry in selected_list.entries]:
-        bot.send_message(chat_id, f"Джерело '{entry_name_to_delete}' не знайдено в списку '{selected_list.list_name}'. Спробуйте ще раз.")
+        bot.send_message(chat_id,
+                         f"Джерело '{entry_name_to_delete}' не знайдено в списку '{selected_list.list_name}'. Спробуйте ще раз.")
         bot.register_next_step_handler(message, lambda m: delete_entry(m, selected_list, user))
         return
     entry_to_delete = next(entry for entry in selected_list.entries if entry.title == entry_name_to_delete)
     selected_list.entries.remove(entry_to_delete)
     session.commit()
 
-    bot.send_message(chat_id, f"Джерело '{entry_name_to_delete}' успішно видалено зі списку '{selected_list.list_name}'.")
+    bot.send_message(chat_id,
+                     f"Джерело '{entry_name_to_delete}' успішно видалено зі списку '{selected_list.list_name}'.")
+
 
 bot.polling(none_stop=True)
