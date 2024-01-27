@@ -1,7 +1,8 @@
-from sqlalchemy import create_engine, Column, BigInteger, String, Boolean, Date, Text, ForeignKey, Integer
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import Column, String, Integer, BigInteger, Boolean, Date, Text, ForeignKey, ForeignKeyConstraint
+from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = 'Users'
@@ -17,17 +18,37 @@ class User(Base):
 
 class List(Base):
     __tablename__ = 'Lists'
-
     list_id = Column(BigInteger, primary_key=True, autoincrement=True)
     list_name = Column(String(50))
     list_owner = Column(BigInteger, ForeignKey('Users.user_id'))
 
+    entries = relationship('Entry', back_populates='list')
     owner = relationship("User", back_populates="lists")
     books = relationship("Book", back_populates="parent_list")
     docs = relationship("Doc", back_populates="parent_list")
-    archives = relationship("Archives", back_populates="parent_list")
+    archives = relationship("Archive", back_populates="parent_list")
     articles = relationship("Article", back_populates="parent_list")
     interviews = relationship("Interview", back_populates="parent_list")
+
+
+class Entry(Base):
+    __tablename__ = 'Entries'
+
+    entry_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    from_book_resource_id = Column(BigInteger, ForeignKey('Books.book_id', ondelete='CASCADE'))
+    from_doc_resource_id = Column(BigInteger, ForeignKey('Docs.doc_id', ondelete='CASCADE'))
+    from_arch_resource_id = Column(BigInteger, ForeignKey('Archives.arch_id', ondelete='CASCADE'))
+    from_artcl_resource_id = Column(BigInteger, ForeignKey('Articles.article_id', ondelete='CASCADE'))
+    from_inter_resource_id = Column(BigInteger, ForeignKey('Interviews.interview_id', ondelete='CASCADE'))
+    entry_type = Column(String(50))
+    list_id = Column(BigInteger, ForeignKey('Lists.list_id'))
+
+    book = relationship('Book', back_populates='entry')
+    doc = relationship('Doc', back_populates='entry')
+    archive = relationship('Archive', back_populates='entry')
+    article = relationship('Article', back_populates='entry')
+    interview = relationship('Interview', back_populates='entry')
+    list = relationship('List', back_populates='entries')
 
 
 class Book(Base):
@@ -49,6 +70,7 @@ class Book(Base):
     date_of_pub = Column(Date)
     list_id = Column(BigInteger, ForeignKey('Lists.list_id'))
 
+    entry = relationship('Entry', back_populates='book')
     parent_list = relationship("List", back_populates="books")
 
 
@@ -63,10 +85,11 @@ class Doc(Base):
     refs = Column(String(50))
     list_id = Column(BigInteger, ForeignKey('Lists.list_id'))
 
+    entry = relationship('Entry', back_populates='doc')
     parent_list = relationship("List", back_populates="docs")
 
 
-class Archives(Base):
+class Archive(Base):
     __tablename__ = 'Archives'
 
     arch_id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -75,6 +98,7 @@ class Archives(Base):
     refs = Column(String(50), nullable=False)
     list_id = Column(BigInteger, ForeignKey('Lists.list_id'))
 
+    entry = relationship('Entry', back_populates='archive')
     parent_list = relationship("List", back_populates="archives")
 
 
@@ -90,6 +114,7 @@ class Article(Base):
     article_page = Column(Integer)
     list_id = Column(BigInteger, ForeignKey('Lists.list_id'))
 
+    entry = relationship('Entry', back_populates='article')
     parent_list = relationship("List", back_populates="articles")
 
 
@@ -104,4 +129,5 @@ class Interview(Base):
     interview_date = Column(Date, nullable=False)
     list_id = Column(BigInteger, ForeignKey('Lists.list_id'))
 
+    entry = relationship('Entry', back_populates='interview')
     parent_list = relationship("List", back_populates="interviews")
