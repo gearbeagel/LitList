@@ -79,6 +79,8 @@ class Doc(Base):
 
     doc_id = Column(BigInteger, primary_key=True, autoincrement=True)
     doc_title = Column(String(50), nullable=False)
+    doc_source = Column(String(50), nullable=False)
+    doc_author = Column(String(50), nullable=False)
     publisher_name = Column(String(50), nullable=False)
     publisher_city = Column(String(50), nullable=False)
     publisher_year = Column(String(50), nullable=False)

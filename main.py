@@ -137,7 +137,7 @@ def process_entry_type(message, selected_list):
         bot.send_message(chat_id, "Ви обрали електронну книгу. Введіть дані про електронну книгу.")
         bot.register_next_step_handler(message, lambda m: process_ebook_data(m, selected_list))
     elif source_type == "Документ":
-        bot.send_message(chat_id, "Ви обрали документ. Введіть дані про документ.")
+        bot.send_message(chat_id, "Ви обрали документ. Введіть назву документу")
         bot.register_next_step_handler(message, lambda m: process_doc_data(m, selected_list))
     elif source_type == "Архів":
         bot.send_message(chat_id, "Ви обрали архів. Введіть дані про архів.")
@@ -164,7 +164,7 @@ def show_lists(message):
         lists = user.lists
         if lists:
             for user_list in lists:
-                list_content = f"\nНазва: {user_list.list_name}\n"
+                list_content = f"Назва: {user_list.list_name}\n\n"
                 sources = []
                 entries = user_list.entries
                 if entries:
@@ -191,7 +191,7 @@ def show_lists(message):
                             if interview:
                                 sources.append(format_interview(interview))
                     if sources:
-                        list_content += "\n".join([f"{idx}. {source}" for idx, source in enumerate(sources, start=1)])
+                        list_content += "".join([f"{idx}. {source}" for idx, source in enumerate(sources, start=1)])
                     else:
                         list_content += "Список порожній."
                     bot.send_message(chat_id, list_content, parse_mode='HTML')
@@ -219,17 +219,20 @@ def format_book(book):
         if not book.authors2_surname and not book.authors2_name:
             return (
                 f"{book.authors1_surname}, {book.authors1_name}, <i>{book.book_title}</i>. "
-                f"({book.publisher_city}: {book.publisher_name}, {book.publisher_year}), {book.refs}\n"
+                f"({book.publisher_city}: {book.publisher_name}, {book.publisher_year})"
+                f"{"," + book.refs if book.refs else ""}\n"
             )
         else:
             return (
                 f"{book.authors1_surname}, {book.authors1_name} and {book.authors2_surname}, {book.authors2_name} <i>{book.book_title}</i>. "
-                f"({book.publisher_city}: {book.publisher_name}, {book.publisher_year}), {book.refs}\n"
+                f"({book.publisher_city}: {book.publisher_name}, {book.publisher_year})"
+                f"{"," + book.refs if book.refs else ""}\n"
             )
 
 
 def format_doc(doc):
-    return f"{doc.doc_title}. {doc.publisher_city}: {doc.publisher_name}, {doc.publisher_year}\n"
+    return (f"{doc.doc_title}. <i>{doc.doc_source}</i>, упоряд. і авт. комент. {doc.doc_author}. "
+            f"({doc.publisher_city}: {doc.publisher_name}, {doc.publisher_year}) {"," + doc.refs if doc.refs else ""}\n")
 
 
 def format_archive(archive):

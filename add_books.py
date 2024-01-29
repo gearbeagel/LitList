@@ -31,8 +31,8 @@ def process_author_data(message, list_id, book_name, author_count):
     if author_count == 1 or author_count == 2:
         msg = bot.send_message(chat_id,
                                f"Як звати {'першого ' if author_count == 2 else ''}автора? {
-                               "якщо було вказно кількість авторів більше, ніж два,"
-                               "введіть прізвище першого автора)" if author_count > 2 else ''}")
+                                 "якщо було вказно кількість авторів більше, ніж два,"
+                                 "введіть прізвище першого автора)" if author_count > 3 else ''}")
         bot.register_next_step_handler(msg, lambda m: process_author_name(m, list_id, book_name, author_count))
     else:
         msg = bot.send_message(chat_id, "Як звати першого автора?")
@@ -55,10 +55,9 @@ def process_author_name(message, list_id, book_name, author_count):
     else:
         user_data_dict[chat_id] = {"author1_name": author1_name}
         author2_name = ""
-        msg = bot.send_message(chat_id, "Яке автора прізвище? (якщо було вказно кількість авторів більше, ніж два, "
-                                        "введіть прізвище першого автора)")
+        msg = bot.send_message(chat_id, "Яке прізвище автора?")
         bot.register_next_step_handler(msg, lambda m, author1=author1_name, author2=author2_name:
-        process_author_surname(m, list_id, book_name, author_count, author1, author2))
+                                       process_author_surname(m, list_id, book_name, author_count, author1, author2))
 
 
 def process_author_surname(message, list_id, book_name, author_count, author1_name, author2_name):
@@ -147,7 +146,9 @@ def process_year(message, list_id, book_name, author1_name, author1_surname, aut
                                                               author2_name, author2_surname,
                                                               publisher_city, publisher))
         return
-    msg = bot.send_message(chat_id, "На якій сторінці знаходиться те, на що ви створюєте посилання?")
+    msg = bot.send_message(chat_id,
+                           "На якій сторінці знаходиться те, на що ви створюєте посилання? "
+                           "(якщо вона відсутня, напишіть слово 'відсутня')")
     bot.register_next_step_handler(msg, lambda m: process_refs(m, list_id, book_name, author1_name, author1_surname,
                                                                author2_name, author2_surname,
                                                                publisher, publisher_city, year))
@@ -155,6 +156,7 @@ def process_year(message, list_id, book_name, author1_name, author1_surname, aut
 
 def process_refs(message, list_id, book_name, author1_name, author1_surname, author2_name, author2_surname, publisher,
                  publisher_city, year):
+    refs = ""
     if message.content_type != 'text':
         bot.send_message(message.chat.id, 'Назва елементу має бути текстом. Спробуйте ще раз.')
         bot.register_next_step_handler(message,
@@ -162,7 +164,17 @@ def process_refs(message, list_id, book_name, author1_name, author1_surname, aut
                                                                         author1_name, author1_surname, author2_name,
                                                                         author2_surname, publisher))
         return
-    refs = message.text
+
+    if message.text.lower() == "відсутня":
+        refs = ""
+    elif message.text.isdigit():
+        refs = int(message.text)
+    else:
+        bot.send_message(message.chat.id, "Щось пішло не так... Спробуйте ще раз.")
+        bot.register_next_step_handler(message,
+                                       lambda m: process_publisher_city(m, list_id, book_name,
+                                                                        author1_name, author1_surname, author2_name,
+                                                                        author2_surname, publisher))
     chat_id = message.chat.id
     selected_list = session.query(List).filter_by(list_id=list_id).first()
     save_book(book_name, author1_name, author1_surname, author2_name, author2_surname, publisher, publisher_city, year,
@@ -183,9 +195,8 @@ def save_book(book_name, author1_name, author1_surname, author2_name, author2_su
         authors2_surname=author2_surname,
         publisher_name=publisher,
         publisher_city=publisher_city,
-        publisher_year=year,
+        publisher_year=year.year,
         refs=refs,
-        link='',
         list_id=selected_list.list_id
     )
     session.add(new_book)
@@ -193,7 +204,7 @@ def save_book(book_name, author1_name, author1_surname, author2_name, author2_su
 
     book_id = new_book.book_id
     new_entry = Entry(
-        entry_type='book',
+        entry_type='doc',
         from_book_resource_id=book_id,
         list_id=selected_list.list_id
     )
