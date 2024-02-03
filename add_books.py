@@ -32,7 +32,7 @@ def process_author_data(message, list_id, book_name, author_count):
         msg = bot.send_message(chat_id,
                                f"Як звати {'першого ' if author_count == 2 else ''}автора? {
                                  "якщо було вказно кількість авторів більше, ніж два,"
-                                 "введіть прізвище першого автора)" if author_count > 3 else ''}")
+                                 "введіть прізвище першого автора)" if author_count >= 3 else ''}")
         bot.register_next_step_handler(msg, lambda m: process_author_name(m, list_id, book_name, author_count))
     else:
         msg = bot.send_message(chat_id, "Як звати першого автора?")
@@ -204,7 +204,7 @@ def save_book(book_name, author1_name, author1_surname, author2_name, author2_su
 
     book_id = new_book.book_id
     new_entry = Entry(
-        entry_type='doc',
+        entry_type='book',
         from_book_resource_id=book_id,
         list_id=selected_list.list_id
     )

@@ -1,3 +1,5 @@
+import calendar
+
 from utils import *
 
 from add_archive import process_archive_data
@@ -134,10 +136,10 @@ def process_entry_type(message, selected_list):
         bot.send_message(chat_id, "Ви обрали книгу. Введіть назву книги.")
         bot.register_next_step_handler(message, lambda m: process_book_data(m, selected_list))
     elif source_type == "Електронна книга":
-        bot.send_message(chat_id, "Ви обрали електронну книгу. Введіть дані про електронну книгу.")
+        bot.send_message(chat_id, "Ви обрали електронну книгу. Введіть назву електронної книги.")
         bot.register_next_step_handler(message, lambda m: process_ebook_data(m, selected_list))
     elif source_type == "Документ":
-        bot.send_message(chat_id, "Ви обрали документ. Введіть назву документу")
+        bot.send_message(chat_id, "Ви обрали документ. Введіть назву документу.")
         bot.register_next_step_handler(message, lambda m: process_doc_data(m, selected_list))
     elif source_type == "Архів":
         bot.send_message(chat_id, "Ви обрали архів. Введіть дані про архів.")
@@ -194,7 +196,7 @@ def show_lists(message):
                         list_content += "".join([f"{idx}. {source}" for idx, source in enumerate(sources, start=1)])
                     else:
                         list_content += "Список порожній."
-                    bot.send_message(chat_id, list_content, parse_mode='HTML')
+                    bot.send_message(chat_id, list_content, parse_mode='HTML', disable_web_page_preview=True)
         else:
             bot.send_message(chat_id, "У тебе ще немає списків. Використай /create_list, аби створити список.")
     else:
@@ -206,14 +208,14 @@ def format_book(book):
         if not book.authors2_surname and not book.authors2_name:
             return (
                 f"{book.authors1_surname}, {book.authors1_name}, <i>{book.book_title}</i>. "
-                f"({book.publisher_city}: {book.publisher_name}, {book.publisher_year}), "
-                f"опублікована {book.date_of_pub}, {book.link}\n"
+                f"{book.publisher_city}: {book.publisher_name}, {book.publisher_year}. "
+                f"опублікована {book.date_of_pub.day} {ukrainian_months[book.date_of_pub.month]}, {book.date_of_pub.year}, {book.link}\n"
             )
         else:
             return (
-                f"{book.authors1_surname}, {book.authors1_name} and {book.authors2_surname}, {book.authors2_name} <i>{book.book_title}</i>. "
-                f"({book.publisher_city}: {book.publisher_name}, {book.publisher_year}), "
-                f"опублікована {book.date_of_pub}, {book.link}\n"
+                f"{book.authors1_surname}, {book.authors1_name} і {book.authors2_surname}, {book.authors2_name} <i>{book.book_title}</i>. "
+                f"{book.publisher_city}: {book.publisher_name}, {book.publisher_year}. "
+                f"опублікована {book.date_of_pub.day} {ukrainian_months[book.date_of_pub.month]}, {book.date_of_pub.year} {book.link}\n"
             )
     else:
         if not book.authors2_surname and not book.authors2_name:
@@ -224,7 +226,7 @@ def format_book(book):
             )
         else:
             return (
-                f"{book.authors1_surname}, {book.authors1_name} and {book.authors2_surname}, {book.authors2_name} <i>{book.book_title}</i>. "
+                f"{book.authors1_surname}, {book.authors1_name} і {book.authors2_surname}, {book.authors2_name} <i>{book.book_title}</i>. "
                 f"({book.publisher_city}: {book.publisher_name}, {book.publisher_year})"
                 f"{"," + book.refs if book.refs else ""}\n"
             )
