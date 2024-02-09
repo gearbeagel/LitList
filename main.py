@@ -148,7 +148,7 @@ def process_entry_type(message, selected_list):
         bot.send_message(chat_id, "Ви обрали статтю. Введіть дані про статтю.")
         bot.register_next_step_handler(message, lambda m: process_article_data(m, selected_list))
     elif source_type == "Інтерв'ю":
-        bot.send_message(chat_id, "Ви обрали інтерв'ю. Введіть дані про інтерв'ю.")
+        bot.send_message(chat_id, "Ви обрали інтерв'ю. Введіть ім'я людини, з якою було проведено інтерв'ю.")
         bot.register_next_step_handler(message, lambda m: process_interview_data(m, selected_list))
     else:
         bot.send_message(chat_id, "Невідомий тип. Спробуйте ще раз.")
@@ -222,19 +222,19 @@ def format_book(book):
             return (
                 f"{book.authors1_surname}, {book.authors1_name}, <i>{book.book_title}</i>. "
                 f"({book.publisher_city}: {book.publisher_name}, {book.publisher_year})"
-                f"{"," + book.refs if book.refs else ""}\n"
+                f"{", " + book.refs if book.refs else " "}\n"
             )
         else:
             return (
                 f"{book.authors1_surname}, {book.authors1_name} і {book.authors2_surname}, {book.authors2_name} <i>{book.book_title}</i>. "
                 f"({book.publisher_city}: {book.publisher_name}, {book.publisher_year})"
-                f"{"," + book.refs if book.refs else ""}\n"
+                f"{", " + book.refs if book.refs else " "}\n"
             )
 
 
 def format_doc(doc):
     return (f"{doc.doc_title}. <i>{doc.doc_source}</i>, упоряд. і авт. комент. {doc.doc_author}. "
-            f"({doc.publisher_city}: {doc.publisher_name}, {doc.publisher_year}) {"," + doc.refs if doc.refs else ""}\n")
+            f"({doc.publisher_city}: {doc.publisher_name}, {doc.publisher_year}){", " + doc.refs if doc.refs else " "}\n")
 
 
 def format_archive(archive):
@@ -246,7 +246,9 @@ def format_article(article):
 
 
 def format_interview(interview):
-    return f"{interview.getting_interviewed}. {interview.location_of_interview}\n"
+    return (f"{interview.getting_interviewed} ({interview.gi_year_of_birth.year} р. н.), провів(ла) інтерв'ю {interview.interviewing}, "
+            f"{interview.location_of_interview}, {interview.interview_date.day} {ukrainian_months[interview.interview_date.month]}, "
+            f"{interview.interview_date.year}\n")
 
 
 """ВИДАЛЕННЯ"""
