@@ -1,8 +1,9 @@
-**Literature Sources Creation Bot**
+###**Literature Sources Creation Bot**
 
-Present functions at the moment:
-1. Creating a list.
-2. Deleting a list.
-3. Adding an entry to a list.
-4. Deleting an entry from a list.
-5. Show all lists.
+Possible sources:
+1. Book
+2. E-book
+3. Document
+4. Archive
+5. Article (from a magazine, newspaper or internet source)
+6. Interview
