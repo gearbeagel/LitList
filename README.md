@@ -1,4 +1,4 @@
-###**Literature Sources Creation Bot**
+### Literature Sources Creation Bot
 
 Possible sources:
 1. Book
