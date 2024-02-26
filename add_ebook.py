@@ -28,15 +28,11 @@ def process_author_count(message, list_id, selected_list, book_name):
 def process_author_data(message, list_id, book_name, author_count):
     chat_id = message.chat.id
 
-    if author_count == 1 or author_count == 2:
-        msg = bot.send_message(chat_id,
+    msg = bot.send_message(chat_id,
                                f"Як звати {'першого ' if author_count == 2 else ''}автора? {
                                "якщо було вказно кількість авторів більше, ніж два,"
                                "введіть прізвище першого автора)" if author_count >= 3 else ''}")
-        bot.register_next_step_handler(msg, lambda m: process_author_name(m, list_id, book_name, author_count))
-    else:
-        msg = bot.send_message(chat_id, "Як звати першого автора?")
-        bot.register_next_step_handler(msg, lambda m: process_author_name(m, list_id, book_name, author_count))
+    bot.register_next_step_handler(msg, lambda m: process_author_name(m, list_id, book_name, author_count))
 
 
 def process_author_name(message, list_id, book_name, author_count):
@@ -69,6 +65,13 @@ def process_author_surname(message, list_id, book_name, author_count, author1_na
         msg = bot.send_message(chat_id, "Як звати другого автора?")
         bot.register_next_step_handler(msg, lambda m: process_second_author_name(m, list_id, book_name, author1_name,
                                                                                  author1_surname))
+    elif author_count > 3:
+        user_data_dict[chat_id] = {"author1_surname": author1_surname + " та ін."}
+        author2_surname = ""
+        msg = bot.send_message(chat_id, "Яке видавництво?")
+        bot.register_next_step_handler(msg,
+                                       lambda m: process_publisher(m, list_id, book_name, author1_name, author1_surname,
+                                                                   author2_name, author2_surname))
     else:
         user_data_dict[chat_id] = {"author1_surname": author1_surname}
         author2_surname = ""
@@ -213,6 +216,7 @@ def save_ebook(book_name, author1_name, author1_surname, author2_name, author2_s
     new_entry = Entry(
         entry_type='book',
         from_book_resource_id=book_id,
+        mentioning='first',
         list_id=selected_list.list_id
     )
     session.add(new_entry)

@@ -123,7 +123,7 @@ def delete_entry(message, selected_list, source_type):
         if interview:
             session.delete(interview)
             session.commit()
-            bot.send_message(chat_id, f"Інтерв'ю з '{entry_name}' успішно видалено.")
+            bot.send_message(chat_id, f"Інтерв'ю з {entry_name} успішно видалено.")
         else:
-            bot.send_message(chat_id, f"Інтерв'ю з '{entry_name}' не знайдено.")
+            bot.send_message(chat_id, f"Інтерв'ю з {entry_name} не знайдено.")
 

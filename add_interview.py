@@ -25,8 +25,8 @@ def process_dob_of_gi(message, selected_list):
     except ValueError:
         bot.send_message(chat_id, "Неправильний формат року. Введіть рік у форматі YYYY (наприклад, 2012).")
         bot.register_next_step_handler(lambda m: process_interview_date(m, selected_list))
-    msg = bot.send_message(chat_id, "Хто проводив інтерв'ю?")
-    bot.register_next_step_handler(msg, lambda m: process_interviewer(message, selected_list))
+    msg = bot.send_message(chat_id, "Хто проводив інтерв'ю? (введіть повне ім'я)")
+    bot.register_next_step_handler(msg, lambda m: process_interviewer(m, selected_list))
 
 
 def process_interviewer(message, selected_list):
@@ -64,7 +64,6 @@ def process_interview_date(message, selected_list):
     save_interview(selected_list)
     bot.send_message(chat_id, f"Елемент збережений у список '{selected_list.list_name}'!")
 
-print(interview_info)
 
 def save_interview(selected_list):
     new_inter = Interview(
@@ -82,6 +81,7 @@ def save_interview(selected_list):
     inter_entry = Entry(
         entry_type='interview',
         from_inter_resource_id=inter_id,
+        mentioning='first',
         list_id=selected_list.list_id
     )
     session.add(inter_entry)
