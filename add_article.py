@@ -17,7 +17,9 @@ def process_article_author_name(message, selected_list):
     article_data['article_author_name'] = message.text
     if article_data['article_author_name'] == "Немає" or article_data['article_author_name'] == "немає":
         article_data['article_author_surname'] = ''
-        msg = bot.send_message(chat_id, "Коли була опублікована стаття?")
+        msg = bot.send_message(chat_id, "Коли була опублікована стаття (формат: день-місяць-рік)? "
+                                    "(для журнальних статей лише потрібен рік. Введіть у наступному форматі: "
+                                     "\n 01-01-YYYY, де YYYY - ваш рік публікації)")
         bot.register_next_step_handler(msg, lambda m: process_article_dop(m, selected_list))
     else:
         msg = bot.send_message(chat_id, "Яке прізвище у автора статті?")
@@ -28,21 +30,27 @@ def process_article_author_surname(message, selected_list):
     chat_id = message.chat.id
     article_data['article_author_surname'] = message.text
 
-    msg = bot.send_message(chat_id, "Коли була опублікована стаття?")
+    msg = bot.send_message(chat_id, "Коли була опублікована стаття (формат: день-місяць-рік)? "
+                                    "(для журнальних статей лише потрібен рік. Введіть у наступному форматі: "
+                                     "\n 01-01-YYYY, де YYYY - ваш рік публікації)")
     bot.register_next_step_handler(msg, lambda m: process_article_dop(m, selected_list))
 
 
 def process_article_dop(message, selected_list):
     chat_id = message.chat.id
-    article_data['article_dop'] = datetime.strptime(message.text, "%d-%m-%Y").date()
-
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    newspaper_article = types.KeyboardButton("Стаття із газети")
-    internet_publication = types.KeyboardButton("Публікація в інтернеті")
-    magazine_article = types.KeyboardButton("Стаття із журналу")
-    keyboard.add(newspaper_article, internet_publication, magazine_article)
-    msg = bot.send_message(chat_id, "Якого виду ця стаття?", reply_markup=keyboard)
-    bot.register_next_step_handler(msg, lambda m: process_article_type(m, selected_list))
+    try:
+        article_data['article_dop'] = datetime.strptime(message.text, "%d-%m-%Y").date()
+        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+        newspaper_article = types.KeyboardButton("Стаття із газети")
+        internet_publication = types.KeyboardButton("Публікація в інтернеті")
+        magazine_article = types.KeyboardButton("Стаття із журналу")
+        keyboard.add(newspaper_article, internet_publication, magazine_article)
+        msg = bot.send_message(chat_id, "Якого виду ця стаття?", reply_markup=keyboard)
+        bot.register_next_step_handler(msg, lambda m: process_article_type(m, selected_list))
+    except ValueError:
+        msg = bot.send_message(chat_id, "Ви ввели рік у неправильному форматі. Будь ласка, спробуйте ще раз.")
+        bot.register_next_step_handler(msg, lambda m: process_article_dop(m, selected_list))
+        return
 
 
 def process_article_type(message, selected_list):

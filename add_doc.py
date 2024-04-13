@@ -7,6 +7,14 @@ def process_doc_data(message, selected_list):
     doc_title = message.text
     list_id = selected_list.list_id
 
+    if message.text == "/back":
+        msg = bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                                "Якщо хочеш продовжити роботу, вибирай з перелічених функцій. Їх можна"
+                                                "побачити, прописавши /start.",
+                               reply_markup=types.ReplyKeyboardRemove())
+        bot.register_next_step_handler(msg, lambda m: back_to_start(m))
+        return
+
     msg = bot.send_message(chat_id, "Із якої збірки документ?")
     bot.register_next_step_handler(msg, lambda m: process_doc_source(m, selected_list, doc_title))
 

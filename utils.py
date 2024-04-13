@@ -7,7 +7,7 @@ from telebot import types
 
 from db_models import *
 
-BOT_TOKEN = "6894160738:AAG58kcR8eg9l8VCHGe6Gk5TipnQcLKt42E"
+BOT_TOKEN = "6894160738:AAEg4a-SWcjM_AE7_XZu-9A85zPk9RnrrGE"
 DATABASE_URL = 'mysql+mysqlconnector://root:Funnyhaha111@localhost:3306/lit_list'
 
 engine = create_engine(DATABASE_URL)

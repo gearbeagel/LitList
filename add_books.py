@@ -3,6 +3,8 @@ from db_models import *
 
 book_data = {}
 
+
+
 def process_book_data(message, selected_list):
     chat_id = message.chat.id
     book_data["book_name"] = message.text
@@ -29,7 +31,7 @@ def process_author_data(message, selected_list):
     chat_id = message.chat.id
 
     msg = bot.send_message(chat_id,
-                           f"Як звати {'першого ' if book_data['author_count'] >= 1 else ''}автора? {'(якщо було вказно кількість авторів більше, ніж один, введіть прізвище першого автора)' if book_data['author_count'] > 1 else ''}")
+                           f"Як звати {'першого ' if book_data['author_count'] > 1 else ''}автора? {'(якщо було вказно кількість авторів більше, ніж один, введіть прізвище першого автора)' if book_data['author_count'] > 1 else ''}")
     bot.register_next_step_handler(msg, lambda m: process_author_name(m, selected_list))
 
 
@@ -40,7 +42,7 @@ def process_author_name(message, selected_list):
     book_data["author1_name"] = author1_name
     book_data["author2_name"] = ''
 
-    msg = bot.send_message(chat_id, f"Яке у {'першого' if book_data['author_count'] >= 2 else ''} автора прізвище?")
+    msg = bot.send_message(chat_id, f"Яке у {'першого ' if book_data['author_count'] >= 2 else ''}автора прізвище?")
     bot.register_next_step_handler(msg, lambda m: process_author_surname(m, selected_list))
 
 

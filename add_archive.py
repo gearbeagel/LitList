@@ -7,7 +7,7 @@ def process_archive_data(message, selected_list):
     chat_id = message.chat.id
     archive_data['archive_title'] = message.text
 
-    msg = bot.send_message(chat_id, "В який період були створені дані архівні матеріали?")
+    msg = bot.send_message(chat_id, "В який період були створені дані архівні матеріали? (записати у форматі: дд.мм.рррр - дд.мм.рррр")
     bot.register_next_step_handler(msg, lambda m: process_archive_period(m, selected_list))
 
 def process_archive_period(message, selected_list):
@@ -37,7 +37,7 @@ def save_archive(archive_data, selected_list):
         arch_title=archive_data['archive_title'],
         arch_period=archive_data['archive_period'],
         arch_location=archive_data['archive_location'],
-        arch_placemenr=archive_data['archive_placement'],
+        arch_placement=archive_data['archive_placement'],
         list_id=selected_list.list_id
     )
     session.add(new_arch)

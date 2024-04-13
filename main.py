@@ -9,7 +9,7 @@ from delete_stuff import delete_list, process_selected_list_deletion
 from add_books import process_book_data
 
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=['start', 'back'])
 def start(message):
     chat_id = message.chat.id
     user = session.query(User).filter_by(chat_id=chat_id).first()
@@ -24,6 +24,7 @@ def start(message):
         session.add(user)
         session.commit()
 
+    if not user:
         bot.send_message(chat_id, f"Привіт! Розкажу про функціонал бота:\n"
                                   "/create_list - створити список літератури.\n"
                                   "/create_entry - створити елемент у списку літератури.\n"
@@ -62,12 +63,27 @@ def process_list_name(message, user, user_lists):
         bot.register_next_step_handler(message, lambda m: process_list_name(m, user, user_lists))
         return
 
-    list_name = message.text.strip()
-    if any(existing_list.list_name == list_name for existing_list in user_lists):
-        bot.send_message(message.chat.id, 'Список з такою назвою вже існує. Спробуйте іншу назву.')
+    list_name = message.text
+
+    if message.text == "/back":
+        bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                          "Якщо хочеш продовжити роботу, вибирай з перелічених функцій:\n"
+                                          "/create_list - створити список літератури.\n"
+                                          "/create_entry - створити елемент у списку літератури.\n"
+                                          "/show_lists - передивитися свої списки літератури.\n"
+                                          "/delete_list - видалити список.\n"
+                                          "/delete_entry - видалити джерело у списку літератури.")
         return
 
-    new_list = List(list_name=list_name, list_owner=user.user_id)
+    if any(existing_list.list_name == list_name for existing_list in user_lists):
+        bot.send_message(message.chat.id, 'Список з такою назвою вже існує. Спробуйте іншу назву.')
+        bot.register_next_step_handler(message, lambda m: process_list_name(m, user, user_lists))
+        return
+
+    new_list = List(
+        list_name=list_name,
+        list_owner=user.user_id
+    )
     session.add(new_list)
     session.commit()
 
@@ -103,6 +119,16 @@ def process_list_choice(message):
     user = session.query(User).filter_by(chat_id=chat_id).first()
     selected_list = session.query(List).filter_by(list_name=list_name, list_owner=user.user_id).first()
 
+    if message.text == "/back":
+        bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                          "Якщо хочеш продовжити роботу, вибирай з перелічених функцій:\n"
+                                          "/create_list - створити список літератури.\n"
+                                          "/create_entry - створити елемент у списку літератури.\n"
+                                          "/show_lists - передивитися свої списки літератури.\n"
+                                          "/delete_list - видалити список.\n"
+                                          "/delete_entry - видалити джерело у списку літератури.")
+        return
+
     if not selected_list:
         bot.send_message(chat_id, "Помилка при виборі списку. Спробуй ще раз.")
         bot.register_next_step_handler(message, create_entry)
@@ -119,6 +145,17 @@ def process_list_choice(message):
 def process_mentioning(message, selected_list):
     chat_id = message.chat.id
     mentioning = message.text
+
+    if message.text == "/back":
+        bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                          "Якщо хочеш продовжити роботу, вибирай з перелічених функцій:\n"
+                                          "/create_list - створити список літератури.\n"
+                                          "/create_entry - створити елемент у списку літератури.\n"
+                                          "/show_lists - передивитися свої списки літератури.\n"
+                                          "/delete_list - видалити список.\n"
+                                          "/delete_entry - видалити джерело у списку літератури.")
+        return
+
     if mentioning not in ["Так", "Ні"]:
         bot.send_message(chat_id, "Будь ласка, виберіть 'Так' або 'Ні'.")
         bot.register_next_step_handler(message, lambda m: process_mentioning(m, selected_list))
@@ -144,6 +181,16 @@ def process_entry_type(message, selected_list, mentioning):
     except KeyError:
         bot.send_message(chat_id, "Невідомий тип. Спробуйте ще раз.")
         bot.register_next_step_handler(message, lambda m: process_entry_type(m, selected_list, mentioning))
+        return
+
+    if message.text == "/back":
+        bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                          "Якщо хочеш продовжити роботу, вибирай з перелічених функцій:\n"
+                                          "/create_list - створити список літератури.\n"
+                                          "/create_entry - створити елемент у списку літератури.\n"
+                                          "/show_lists - передивитися свої списки літератури.\n"
+                                          "/delete_list - видалити список.\n"
+                                          "/delete_entry - видалити джерело у списку літератури.")
         return
 
     if source_type == "Книга":
@@ -190,6 +237,15 @@ def process_entry_type(message, selected_list, mentioning):
 def process_entry_name(message, selected_list, source_type):
     chat_id = message.chat.id
     entry_name = message.text
+    if message.text == "/back":
+        bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                          "Якщо хочеш продовжити роботу, вибирай з перелічених функцій:"
+                                          "/create_list - створити список літератури.\n"
+                                          "/create_entry - створити елемент у списку літератури.\n"
+                                          "/show_lists - передивитися свої списки літератури.\n"
+                                          "/delete_list - видалити список.\n"
+                                          "/delete_entry - видалити джерело у списку літератури.")
+        return
 
     msg = bot.send_message(chat_id,
                            "Введіть номер сторінки, на якій знаходиться повторне посилання. (якщо її не існує, "
@@ -200,6 +256,15 @@ def process_entry_name(message, selected_list, source_type):
 def process_additional_notes(message, selected_list, source_type, entry_name):
     chat_id = message.chat.id
     notes = message.text
+    if message.text == "/back":
+        bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                          "Якщо хочеш продовжити роботу, вибирай з перелічених функцій:"
+                                          "/create_list - створити список літератури.\n"
+                                          "/create_entry - створити елемент у списку літератури.\n"
+                                          "/show_lists - передивитися свої списки літератури.\n"
+                                          "/delete_list - видалити список.\n"
+                                          "/delete_entry - видалити джерело у списку літератури.")
+        return
 
     if source_type == "Книга" or source_type == "Електронна книга":
         book = session.query(Book).filter_by(book_title=entry_name).first()
@@ -283,7 +348,6 @@ def process_additional_notes(message, selected_list, source_type, entry_name):
 
     else:
         bot.send_message(chat_id, "Щось пішло не так...")
-
 
 
 """ПЕРЕГЛЯД ІНФОРМАЦІЇ"""
@@ -486,17 +550,6 @@ def start_delete_entry(message):
     msg = bot.send_message(chat_id, "Вибери список, з якого хочеш видалити джерело:", reply_markup=list_markup)
     list_markup = types.ReplyKeyboardRemove(selective=False)
     bot.register_next_step_handler(msg, process_selected_list_deletion, user)
-
-
-"""MISC"""
-
-
-@bot.message_handler(commands=['back'])
-def back_to_start(message):
-    bot.clear_step_handler(message.chat.id)
-    bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
-                                      "Якщо хочеш продовжити роботу, вибирай з перелічених функцій.",
-                     reply_markup=types.ReplyKeyboardRemove())
 
 
 bot.polling(none_stop=True)

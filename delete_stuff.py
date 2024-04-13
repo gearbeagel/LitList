@@ -1,11 +1,22 @@
 from utils import *
 
 """LIST"""
+
+
 def delete_list(message, user):
     chat_id = message.chat.id
     list_name = message.text.strip()
     user_lists = user.lists
     selected_list = next((lst for lst in user_lists if lst.list_name == list_name), None)
+    if message.text == "/back":
+        bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                          "Якщо хочеш продовжити роботу, вибирай з перелічених функцій:"
+                                          "/create_list - створити список літератури.\n"
+                                          "/create_entry - створити елемент у списку літератури.\n"
+                                          "/show_lists - передивитися свої списки літератури.\n"
+                                          "/delete_list - видалити список.\n"
+                                          "/delete_entry - видалити джерело у списку літератури.")
+        return
     if not selected_list:
         bot.send_message(chat_id, "Список з такою назвою не існує. Спробуйте ще раз.")
         bot.register_next_step_handler(message, lambda m: delete_list(m, user))
@@ -39,6 +50,7 @@ def delete_list(message, user):
 
 """ENTRY"""
 
+
 def process_selected_list_deletion(message, user):
     chat_id = message.chat.id
     user_lists = user.lists
@@ -56,9 +68,18 @@ def process_selected_list_deletion(message, user):
     bot.register_next_step_handler(message, process_entry_type_for_deletion, selected_list, user)
 
 
-def process_entry_type_for_deletion(message, selected_list, user):
+def process_entry_type_for_deletion(message, selected_list):
     chat_id = message.chat.id
-    source_type = message.text.strip()
+    source_type = message.text
+    if message.text == "/back":
+        bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                          "Якщо хочеш продовжити роботу, вибирай з перелічених функцій:\n"
+                                          "/create_list - створити список літератури.\n"
+                                          "/create_entry - створити елемент у списку літератури.\n"
+                                          "/show_lists - передивитися свої списки літератури.\n"
+                                          "/delete_list - видалити список.\n"
+                                          "/delete_entry - видалити джерело у списку літератури.")
+        return
     if source_type == 'Книга':
         bot.send_message(chat_id, "Окей, напишіть назву книги, яке хочете видалити.")
         bot.register_next_step_handler(message, delete_entry, selected_list, source_type='book')
@@ -77,11 +98,23 @@ def process_entry_type_for_deletion(message, selected_list, user):
     elif source_type == "Інтерв'ю":
         bot.send_message(chat_id, "Окей, напишіть ім'я людини, з якою ви хочете видалити інтерв'ю.")
         bot.register_next_step_handler(message, delete_entry, selected_list, source_type='interview')
+    else:
+        bot.send_message(chat_id, "Щось пішло не так... Спробуйте знову.")
+        bot.register_next_step_handler(message, process_entry_type_for_deletion, selected_list)
 
 
 def delete_entry(message, selected_list, source_type):
     chat_id = message.chat.id
-    entry_name = message.text.strip()
+    entry_name = message.text
+    if message.text == "/back":
+        bot.send_message(message.chat.id, "Ти повернувся в головне меню! "
+                                          "Якщо хочеш продовжити роботу, вибирай з перелічених функцій:"
+                                          "/create_list - створити список літератури.\n"
+                                          "/create_entry - створити елемент у списку літератури.\n"
+                                          "/show_lists - передивитися свої списки літератури.\n"
+                                          "/delete_list - видалити список.\n"
+                                          "/delete_entry - видалити джерело у списку літератури.")
+        return
     if source_type == 'book' or source_type == 'ebook':
         book = session.query(Book).filter_by(book_title=entry_name).first()
         if book:
@@ -126,4 +159,3 @@ def delete_entry(message, selected_list, source_type):
             bot.send_message(chat_id, f"Інтерв'ю з {entry_name} успішно видалено.")
         else:
             bot.send_message(chat_id, f"Інтерв'ю з {entry_name} не знайдено.")
-
