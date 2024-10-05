@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import telebot
@@ -7,8 +8,8 @@ from telebot import types
 
 from db_models import *
 
-BOT_TOKEN = "6894160738:AAEg4a-SWcjM_AE7_XZu-9A85zPk9RnrrGE"
-DATABASE_URL = 'mysql+mysqlconnector://root:Funnyhaha111@localhost:3306/lit_list'
+BOT_TOKEN = os.environ['BOT_TOKEN']
+DATABASE_URL = os.environ['DATABASE_URL']
 
 engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(bind=engine)
